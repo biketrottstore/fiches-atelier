@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Fiches atelier Bike Trott Store</title>
+<style>
+:root{
+  --bg:#f3f4f7; --surface:#ffffff; --ink:#12151c; --muted:#5d6472; --line:#d9dce4;
+  --accent:#1f3fd6; --accent-ink:#ffffff; --accent-soft:#e6eaff;
+  --todo:#9a5b00; --todo-soft:#fff1d6; --ready:#0f7a41; --ready-soft:#dcf5e6; --done:#5d6472; --done-soft:#e9ebf0; --warn:#b3261e;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0e1118; --surface:#171b25; --ink:#eef0f6; --muted:#9aa2b3; --line:#2b3140;
+    --accent:#8ea2ff; --accent-ink:#0b1030; --accent-soft:#222a4d;
+    --todo:#ffc766; --todo-soft:#3a2c0e; --ready:#5fdc97; --ready-soft:#12331f; --done:#9aa2b3; --done-soft:#232836; --warn:#ff8a80;
+    color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45}
+main{max-width:620px;margin:0 auto;padding:20px 16px 48px;display:flex;flex-direction:column;gap:16px}
+[hidden]{display:none!important}
+.brand{font-weight:800;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+h1{font-weight:800;font-size:24px;line-height:1.15;margin:4px 0 0}
+h2{font-weight:700;font-size:15px;margin:0}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+label{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:14px}
+input,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+textarea{min-height:92px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button,a.btn{font:inherit;font-weight:600;border-radius:10px;padding:10px 14px;cursor:pointer;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);text-decoration:none;text-align:center;display:inline-block}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+button.ready{background:var(--ready);border-color:var(--ready);color:var(--surface);font-weight:700}
+button.danger{color:var(--warn)}
+button.small{padding:6px 10px;font-size:14px}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{display:flex;gap:8px;flex-wrap:wrap}
+.nav{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.nav button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tabs button{padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:13px}
+.tabs button b{font-size:22px;font-variant-numeric:tabular-nums}
+.tabs button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.totals{gap:0;padding:6px 16px}
+.totals div{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+.totals div:last-child{border-bottom:0}
+.totals span{color:var(--muted);font-size:14px}
+.totals b{font-size:17px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.euro{display:flex;align-items:center;gap:8px;font-weight:700}
+.list{display:flex;flex-direction:column;gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.card.encours{border-left-color:var(--todo)} .card.pret{border-left-color:var(--ready)} .card.rappele{border-left-color:var(--done)}
+.top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.who{font-weight:700;font-size:17px;overflow-wrap:anywhere}
+.pill{font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px;white-space:nowrap}
+.pill.encours{background:var(--todo-soft);color:var(--todo)} .pill.pret{background:var(--ready-soft);color:var(--ready)} .pill.rappele{background:var(--done-soft);color:var(--done)}
+.meta{color:var(--muted);font-size:14px;overflow-wrap:anywhere}
+.amount{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.work{white-space:pre-wrap;overflow-wrap:anywhere;margin:0}
+.msg{color:var(--muted);margin:0}
+.err{color:var(--warn);font-size:14px;margin:0}
+.week{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.week strong{text-align:center;flex:1}
+@media (max-width:400px){.row{grid-template-columns:1fr}h1{font-size:21px}}
+@media print{
+  .noprint,.actions{display:none!important}
+  body{background:#fff;color:#000} .card,.panel{border-color:#999;break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="head">
+    <header>
+      <div class="brand">Bike Trott Store</div>
+      <h1>Fiches atelier</h1>
+    </header>
+    <div class="noprint" id="userBox" hidden>
+      <span class="meta" id="userMail"></span>
+      <button type="button" class="small" id="logout">Se déconnecter</button>
+    </div>
+  </div>
+
+  <p class="msg" id="boot">Chargement…</p>
+
+  <!-- Connexion -->
+  <form class="panel" id="login" hidden>
+    <h2>Connexion</h2>
+    <label for="l-mail">E-mail
+      <input id="l-mail" type="email" autocomplete="username" required>
+    </label>
+    <label for="l-pass">Mot de passe
+      <input id="l-pass" type="password" autocomplete="current-password" required>
+    </label>
+    <p class="err" id="l-err" role="alert"></p>
+    <button class="primary" type="submit" id="l-go">Se connecter</button>
+  </form>
+
+  <div id="app" hidden>
+    <div class="nav noprint" id="nav" style="margin-bottom:16px">
+      <button type="button" data-v="atelier" aria-pressed="true">Atelier</button>
+      <button type="button" data-v="cahier" aria-pressed="false">Cahier de la semaine</button>
+    </div>
+
+    <!-- Vue atelier -->
+    <div id="v-atelier" style="display:flex;flex-direction:column;gap:16px">
+      <div class="tabs" id="tabs">
+        <button type="button" data-f="encours" aria-pressed="true"><b id="n-encours">0</b>En cours</button>
+        <button type="button" data-f="pret" aria-pressed="false"><b id="n-pret">0</b>À rappeler</button>
+        <button type="button" data-f="rappele" aria-pressed="false"><b id="n-rappele">0</b>Client prévenu</button>
+      </div>
+
+      <section class="panel totals" id="totals" hidden aria-label="Montants">
+        <div><span>En cours à l'atelier</span><b id="t-encours">0 €</b></div>
+        <div><span>Terminé, à récupérer</span><b id="t-pret">0 €</b></div>
+        <div><span>Déposé aujourd'hui</span><b id="t-jour">0 €</b></div>
+      </section>
+
+      <form class="panel" id="form" autocomplete="off">
+        <h2 id="formTitle">Nouvelle fiche</h2>
+        <div class="row">
+          <label for="f-name">Client
+            <input id="f-name" type="text" placeholder="Nom et prénom">
+          </label>
+          <label for="f-phone">Téléphone
+            <input id="f-phone" type="tel" placeholder="04…">
+          </label>
+        </div>
+        <div class="row">
+          <label for="f-mail">E-mail
+            <input id="f-mail" type="email" placeholder="client@exemple.be">
+          </label>
+          <label for="f-scooter">Trottinette
+            <input id="f-scooter" type="text" placeholder="ex. Dualtron Thunder 3">
+          </label>
+        </div>
+        <label for="f-price">Prix en euros
+          <span class="euro"><input id="f-price" type="text" inputmode="decimal" placeholder="85"><span aria-hidden="true">€</span></span>
+        </label>
+        <label for="f-work">Travaux à faire
+          <textarea id="f-work" placeholder="ex. changer pneu arrière, régler frein avant, vérifier contrôleur"></textarea>
+        </label>
+        <p class="err" id="status" role="alert"></p>
+        <div class="wrap">
+          <button class="primary" type="submit" id="save">Enregistrer la fiche</button>
+          <button type="button" id="cancel" hidden>Annuler la modification</button>
+        </div>
+      </form>
+
+      <div class="list" id="list"></div>
+    </div>
+
+    <!-- Vue cahier -->
+    <div id="v-cahier" hidden style="display:flex;flex-direction:column;gap:16px">
+      <div class="panel">
+        <div class="week">
+          <button type="button" class="small noprint" id="w-prev" aria-label="Semaine précédente">◀</button>
+          <strong id="w-label"></strong>
+          <button type="button" class="small noprint" id="w-next" aria-label="Semaine suivante">▶</button>
+        </div>
+        <p class="msg" id="w-sum"></p>
+        <div class="wrap noprint">
+          <button type="button" class="primary" id="w-csv">Exporter (Excel / CSV)</button>
+          <button type="button" id="w-print">Imprimer ou enregistrer en PDF</button>
+        </div>
+      </div>
+      <div class="list" id="w-list"></div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+// ======================= RÉGLAGES À REMPLIR =======================
+// 1) Collez ici la configuration donnée par Firebase (Paramètres du projet > Vos applications > Application Web)
+const firebaseConfig = {
+  apiKey: "AIzaSyDOieMul7rE31bjbZTeG4WyvCBFW3-wGNw",
+  authDomain: "biketrottstore2212.firebaseapp.com",
+  projectId: "biketrottstore2212",
+  storageBucket: "biketrottstore2212.firebasestorage.app",
+  messagingSenderId: "518863129572",
+  appId: "1:518863129572:web:6083c370106486717355f1"
+};
+// 2) Personnes qui voient les montants totaux (les autres ne les voient pas).
+//    Ce sont les empreintes SHA-256 des e-mails en minuscules, pour ne pas écrire les adresses en clair dans le fichier.
+const VOIENT_LES_TOTAUX = [
+  "bb2b4eba75801597398d87181cfec2f98ebb18d086bddbefc3dda2e0837a6791",
+  "e99fd7a1978a6e28e2a24e8b3bcab6c058cbc141bcb28c3d0789937eec5d26d4"
+];
+async function empreinte(texte){
+  const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(texte));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+// ==================================================================
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const $ = id => document.getElementById(id);
+const LABEL = {encours:"En cours", pret:"Terminé, à rappeler", rappele:"Client prévenu"};
+const EMPTY = {encours:"Aucune réparation en cours. Ajoutez une fiche quand un client dépose sa trottinette.",
+               pret:"Personne à rappeler pour l'instant.", rappele:"Aucun client prévenu pour l'instant."};
+let col=null, fiches=[], filter="encours", editing=null, confirmDel=null, loaded=false, note="", unsub=null;
+let me=null, seeTotals=false, view="atelier", weekOffset=0;
+
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function waNumber(p){
+  let d=String(p||"").replace(/\D/g,"");
+  if(d.startsWith("00")) d=d.slice(2); else if(d.startsWith("0")) d="32"+d.slice(1);
+  return d;
+}
+function num(v){
+  if(typeof v==="number") return isFinite(v)?v:null;
+  const n=parseFloat(String(v==null?"":v).replace(/[^\d.,]/g,"").replace(",","."));
+  return isFinite(n)?n:null;
+}
+function eur(v){
+  const n=num(v); if(n==null) return "";
+  return new Intl.NumberFormat("fr-BE",{style:"currency",currency:"EUR",minimumFractionDigits:n%1?2:0,maximumFractionDigits:2}).format(n);
+}
+const total = list => list.reduce((t,f)=>t+(num(f.price)||0),0);
+const dayKey = ts => new Date(ts).toLocaleDateString("fr-BE");
+function when(ts){
+  if(!ts) return "";
+  const d=new Date(ts);
+  return d.toLocaleDateString("fr-BE",{weekday:"short",day:"numeric",month:"short"})+" à "+d.toLocaleTimeString("fr-BE",{hour:"2-digit",minute:"2-digit"});
+}
+// Quand le client peut venir : tout de suite jusqu'à la fermeture, sinon au prochain jour d'ouverture (mardi à samedi, 12h00 à 20h00)
+function pickup(){
+  const NAMES=["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"];
+  const n=new Date(), dow=n.getDay(), min=n.getHours()*60+n.getMinutes();
+  const open=d=>d>=2&&d<=6;
+  if(open(dow)&&min<19*60+45) return min>=12*60 ? "dès maintenant, jusqu'à la fermeture à 20h00 aujourd'hui" : "dès aujourd'hui, de 12h00 à 20h00";
+  let d=(dow+1)%7, first=true; while(!open(d)){d=(d+1)%7;first=false}
+  return (first?"dès demain":"dès "+NAMES[d])+", de 12h00 à 20h00";
+}
+function readyMsg(f){
+  return "Bonjour"+(f.name?" "+f.name:"")+", bonne nouvelle : votre trottinette"+(f.scooter?" "+f.scooter:"")+" est prête ! Vous pouvez venir la récupérer "+pickup()+", chez Bike Trott Store, Chaussée d'Alsemberg 144, 1060 Saint-Gilles."+(num(f.price)!=null?" Montant à régler : "+eur(f.price)+".":"")+" À très vite !";
+}
+
+function cardHtml(f, withActions){
+  const wa=waNumber(f.phone); let a="";
+  if(withActions){
+    if(f.status==="encours") a+=`<button class="ready" data-act="pret" data-id="${f.id}">Réparation terminée</button>`;
+    if(f.status==="pret"){
+      const m=readyMsg(f);
+      if(f.phone) a+=`<a class="btn" href="tel:${esc(f.phone.replace(/[^\d+]/g,""))}">Appeler</a>`;
+      if(wa) a+=`<a class="btn" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent(m)}">WhatsApp</a>`;
+      if(f.mail) a+=`<a class="btn" href="mailto:${encodeURIComponent(f.mail)}?subject=${encodeURIComponent("Votre trottinette est prête")}&body=${encodeURIComponent(m)}">E-mail</a>`;
+      a+=`<button class="ready" data-act="rappele" data-id="${f.id}">Client prévenu</button>`;
+      a+=`<button data-act="encours" data-id="${f.id}">Remettre en cours</button>`;
+    }
+    if(f.status==="rappele") a+=`<button data-act="pret" data-id="${f.id}">Remettre à rappeler</button>`;
+    a+=`<button data-act="edit" data-id="${f.id}">Modifier</button>`;
+    a+= confirmDel===f.id
+      ? `<button class="danger" data-act="del" data-id="${f.id}">Confirmer la suppression</button><button data-act="nodel" data-id="${f.id}">Garder</button>`
+      : `<button class="danger" data-act="askdel" data-id="${f.id}">Supprimer</button>`;
+  }
+  return `<article class="card ${f.status}">
+    <div class="top"><div class="who">${esc(f.name||"Client sans nom")}</div><span class="pill ${f.status}">${LABEL[f.status]}</span></div>
+    <div class="meta">${[f.scooter,f.phone,f.mail].filter(Boolean).map(esc).join(" · ")}${num(f.price)!=null?` <span class="amount">· ${esc(eur(f.price))}</span>`:""}</div>
+    <p class="work">${esc(f.work)}</p>
+    <div class="meta">Déposée ${esc(when(f.createdAt))}${f.readyAt?" · terminée "+esc(when(f.readyAt)):""}${f.calledAt?" · prévenu "+esc(when(f.calledAt)):""}${f.createdBy?" · fiche de "+esc(f.createdBy):""}</div>
+    ${a?`<div class="wrap actions">${a}</div>`:""}</article>`;
+}
+
+function weekRange(){
+  const s=new Date(); s.setHours(0,0,0,0);
+  s.setDate(s.getDate()-((s.getDay()+6)%7)+weekOffset*7);   // lundi
+  const e=new Date(s); e.setDate(e.getDate()+7);
+  return [s,e];
+}
+function weekFiches(){
+  const [s,e]=weekRange();
+  return fiches.filter(f=>f.createdAt>=s.getTime()&&f.createdAt<e.getTime()).sort((a,b)=>a.createdAt-b.createdAt);
+}
+
+function render(){
+  for(const s of ["encours","pret","rappele"]) $("n-"+s).textContent=fiches.filter(f=>f.status===s).length;
+  $("totals").hidden=!seeTotals;
+  if(seeTotals){
+    $("t-encours").textContent=eur(total(fiches.filter(f=>f.status==="encours")));
+    $("t-pret").textContent=eur(total(fiches.filter(f=>f.status==="pret")));
+    const today=dayKey(Date.now());
+    $("t-jour").textContent=eur(total(fiches.filter(f=>f.createdAt&&dayKey(f.createdAt)===today)));
+  }
+  const head=note?`<p class="msg">${esc(note)}</p>`:"";
+  if(!loaded){$("list").innerHTML=`<p class="msg">${esc(note||"Chargement des fiches…")}</p>`}
+  else{
+    const rows=fiches.filter(f=>f.status===filter);
+    $("list").innerHTML=head+(rows.length?rows.map(f=>cardHtml(f,true)).join(""):`<p class="msg">${EMPTY[filter]}</p>`);
+  }
+  // Cahier
+  const [s,e]=weekRange(), last=new Date(e); last.setDate(last.getDate()-1);
+  const fmt=d=>d.toLocaleDateString("fr-BE",{day:"numeric",month:"long"});
+  $("w-label").textContent="Semaine du "+fmt(s)+" au "+fmt(last);
+  const wf=weekFiches();
+  $("w-sum").textContent=wf.length+(wf.length>1?" fiches":" fiche")+" cette semaine"+(seeTotals?" · total "+eur(total(wf)):"");
+  $("w-list").innerHTML=wf.length?wf.map(f=>cardHtml(f,false)).join(""):`<p class="msg">Aucune fiche déposée cette semaine.</p>`;
+  $("w-csv").disabled=!wf.length;
+}
+
+function fail(e){
+  console.error(e);
+  $("status").textContent = "L'enregistrement n'a pas marché. Vérifiez la connexion et réessayez.";
+}
+function resetForm(){
+  editing=null; $("form").reset(); $("formTitle").textContent="Nouvelle fiche";
+  $("save").textContent="Enregistrer la fiche"; $("cancel").hidden=true; $("status").textContent="";
+}
+
+$("form").addEventListener("submit", async ev=>{
+  ev.preventDefault();
+  const d={name:$("f-name").value.trim(),phone:$("f-phone").value.trim(),mail:$("f-mail").value.trim(),scooter:$("f-scooter").value.trim(),work:$("f-work").value.trim()};
+  const rawPrice=$("f-price").value.trim();
+  if(!d.name&&!d.phone){$("status").textContent="Indiquez au moins le nom ou le téléphone du client.";return}
+  if(!d.work){$("status").textContent="Notez les travaux à faire.";return}
+  if(rawPrice&&num(rawPrice)==null){$("status").textContent="Le prix doit être un nombre, par exemple 85 ou 85,50.";return}
+  d.price=num(rawPrice);
+  $("save").disabled=true; $("status").textContent="";
+  try{
+    if(editing) await updateDoc(doc(col,editing),d);
+    else{ await addDoc(col,{...d,status:"encours",createdAt:Date.now(),createdBy:me||""}); filter="encours"; setTab(); }
+    resetForm();
+  }catch(e){fail(e)}
+  $("save").disabled=false;
+});
+$("cancel").onclick=resetForm;
+
+function setTab(){ $("tabs").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.f===filter)); render(); }
+$("tabs").addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b)return;filter=b.dataset.f;confirmDel=null;setTab()});
+$("nav").addEventListener("click",ev=>{
+  const b=ev.target.closest("button"); if(!b) return; view=b.dataset.v;
+  $("nav").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));
+  $("v-atelier").hidden=view!=="atelier"; $("v-cahier").hidden=view!=="cahier";
+});
+$("w-prev").onclick=()=>{weekOffset--;render()};
+$("w-next").onclick=()=>{weekOffset++;render()};
+$("w-print").onclick=()=>window.print();
+$("w-csv").onclick=()=>{
+  const cell=v=>'"'+String(v==null?"":v).replace(/"/g,'""').replace(/\r?\n/g," / ")+'"';
+  const dt=ts=>ts?new Date(ts).toLocaleString("fr-BE",{dateStyle:"short",timeStyle:"short"}):"";
+  const rows=[["Date de dépôt","Client","Téléphone","E-mail","Trottinette","Travaux","Prix (€)","Statut","Terminée le","Client prévenu le","Fiche créée par"]];
+  for(const f of weekFiches()) rows.push([dt(f.createdAt),f.name,f.phone,f.mail,f.scooter,f.work,num(f.price)!=null?String(num(f.price)).replace(".",","):"",LABEL[f.status],dt(f.readyAt),dt(f.calledAt),f.createdBy]);
+  const csv="﻿"+rows.map(r=>r.map(cell).join(";")).join("\r\n");
+  const [s]=weekRange();
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+  a.download="cahier-atelier-semaine-du-"+s.getFullYear()+"-"+String(s.getMonth()+1).padStart(2,"0")+"-"+String(s.getDate()).padStart(2,"0")+".csv";
+  document.body.appendChild(a); a.click(); a.remove();
+};
+
+$("list").addEventListener("click", async ev=>{
+  const b=ev.target.closest("button[data-act]"); if(!b||!col) return;
+  const id=b.dataset.id, act=b.dataset.act, f=fiches.find(x=>x.id===id); if(!f) return;
+  if(act==="askdel"){confirmDel=id;render();return}
+  if(act==="nodel"){confirmDel=null;render();return}
+  if(act==="edit"){
+    editing=id; $("f-name").value=f.name||""; $("f-phone").value=f.phone||""; $("f-mail").value=f.mail||""; $("f-scooter").value=f.scooter||"";
+    $("f-price").value=num(f.price)!=null?String(num(f.price)).replace(".",","):""; $("f-work").value=f.work||"";
+    $("formTitle").textContent="Modifier la fiche"; $("save").textContent="Enregistrer les changements"; $("cancel").hidden=false;
+    $("form").scrollIntoView({block:"start"}); return;
+  }
+  b.disabled=true;
+  try{
+    const ref=doc(col,id);
+    if(act==="del") await deleteDoc(ref);
+    else if(act==="pret") await updateDoc(ref,{status:"pret",readyAt:f.readyAt||Date.now(),calledAt:null});
+    else if(act==="rappele") await updateDoc(ref,{status:"rappele",calledAt:Date.now()});
+    else await updateDoc(ref,{status:"encours",readyAt:null,calledAt:null});
+    confirmDel=null;
+  }catch(e){fail(e);b.disabled=false}
+});
+
+// ---------- Démarrage ----------
+if(Object.values(firebaseConfig).some(v=>v==="A_REMPLIR")){
+  $("boot").textContent="L'application n'est pas encore configurée : la configuration Firebase doit être collée en haut du script de ce fichier.";
+}else{
+  const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
+  col=collection(db,"fiches");
+  const allowed=VOIENT_LES_TOTAUX.map(x=>x.trim().toLowerCase());
+
+  $("login").addEventListener("submit", async ev=>{
+    ev.preventDefault(); $("l-err").textContent=""; $("l-go").disabled=true;
+    try{ await signInWithEmailAndPassword(auth,$("l-mail").value.trim(),$("l-pass").value); }
+    catch(e){ $("l-err").textContent = e&&e.code==="auth/network-request-failed" ? "Pas de connexion internet. Réessayez." : "E-mail ou mot de passe incorrect."; }
+    $("l-go").disabled=false;
+  });
+  $("logout").onclick=()=>signOut(auth);
+
+  onAuthStateChanged(auth,user=>{
+    $("boot").hidden=true;
+    if(unsub){unsub();unsub=null}
+    if(!user){
+      me=null; fiches=[]; loaded=false; $("app").hidden=true; $("userBox").hidden=true; $("login").hidden=false; return;
+    }
+    me=(user.email||"").toLowerCase(); seeTotals=false;
+    empreinte(me).then(h=>{ if(me===(user.email||"").toLowerCase()){ seeTotals=allowed.includes(h); render(); } }).catch(()=>{});
+    $("login").hidden=true; $("l-pass").value=""; $("app").hidden=false; $("userBox").hidden=false; $("userMail").textContent=me;
+    note=""; render();
+    unsub=onSnapshot(col,snap=>{
+      fiches=snap.docs.map(x=>{const o={...x.data(),id:x.id}; if(!LABEL[o.status]) o.status="encours"; return o})
+        .sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+      loaded=true; note=""; render();
+    },e=>{
+      console.error(e); loaded=true;
+      note="Les fiches ne sont pas accessibles. Vérifiez les règles Firestore et la connexion, puis rechargez la page."; render();
+    });
+  });
+}
+</script>
+</body>
+</html>
