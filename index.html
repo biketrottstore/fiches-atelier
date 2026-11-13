@@ -61,6 +61,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
 .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
 .who{font-weight:700;font-size:17px;overflow-wrap:anywhere}
 .pill{font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px;white-space:nowrap}
+.pill.paid{background:var(--accent-soft);color:var(--accent)}
+.pay{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:10px}
+.pills{display:flex;gap:6px;flex-wrap:wrap}
 .pill.encours{background:var(--todo-soft);color:var(--todo)} .pill.pret{background:var(--ready-soft);color:var(--ready)} .pill.rappele{background:var(--done-soft);color:var(--done)}
 .meta{color:var(--muted);font-size:14px;overflow-wrap:anywhere}
 .amount{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
@@ -122,6 +125,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
         <div><span>En cours à l'atelier</span><b id="t-encours">0 €</b></div>
         <div><span>Terminé, à récupérer</span><b id="t-pret">0 €</b></div>
         <div><span>Déposé aujourd'hui</span><b id="t-jour">0 €</b></div>
+        <div><span>Encaissé aujourd'hui en cash</span><b id="t-cash">0 €</b></div>
+        <div><span>Encaissé aujourd'hui par carte</span><b id="t-carte">0 €</b></div>
       </section>
 
       <form class="panel" id="form" autocomplete="off">
@@ -206,6 +211,9 @@ import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot
 
 const $ = id => document.getElementById(id);
 const LABEL = {encours:"En cours", pret:"Terminé, à rappeler", rappele:"Client prévenu"};
+const paidTotal = f => (num(f.paidCash)||0)+(num(f.paidCard)||0);
+const sumOf = (list,key) => list.reduce((t,f)=>t+(num(f[key])||0),0);
+let payOpen=null, payDraft={cash:"",carte:""};
 const EMPTY = {encours:"Aucune réparation en cours. Ajoutez une fiche quand un client dépose sa trottinette.",
                pret:"Personne à rappeler pour l'instant.", rappele:"Aucun client prévenu pour l'instant."};
 let col=null, fiches=[], filter="encours", editing=null, confirmDel=null, loaded=false, note="", unsub=null;
@@ -259,16 +267,24 @@ function cardHtml(f, withActions){
       a+=`<button data-act="encours" data-id="${f.id}">Remettre en cours</button>`;
     }
     if(f.status==="rappele") a+=`<button data-act="pret" data-id="${f.id}">Remettre à rappeler</button>`;
+    if(f.status!=="encours"&&payOpen!==f.id) a+=`<button class="primary" data-act="openpay" data-id="${f.id}">${paidTotal(f)>0?"Modifier le paiement":"Encaisser"}</button>`;
     a+=`<button data-act="edit" data-id="${f.id}">Modifier</button>`;
     a+= confirmDel===f.id
       ? `<button class="danger" data-act="del" data-id="${f.id}">Confirmer la suppression</button><button data-act="nodel" data-id="${f.id}">Garder</button>`
       : `<button class="danger" data-act="askdel" data-id="${f.id}">Supprimer</button>`;
   }
   return `<article class="card ${f.status}">
-    <div class="top"><div class="who">${esc(f.name||"Client sans nom")}</div><span class="pill ${f.status}">${LABEL[f.status]}</span></div>
+    <div class="top"><div class="who">${esc(f.name||"Client sans nom")}</div><span class="pills">${paidTotal(f)>0?`<span class="pill paid">${num(f.price)!=null&&paidTotal(f)<num(f.price)?"Payé en partie":"Payé"}</span>`:""}<span class="pill ${f.status}">${LABEL[f.status]}</span></span></div>
     <div class="meta">${[f.scooter,f.phone,f.mail].filter(Boolean).map(esc).join(" · ")}${num(f.price)!=null?` <span class="amount">· ${esc(eur(f.price))}</span>`:""}</div>
     <p class="work">${esc(f.work)}</p>
-    <div class="meta">Déposée ${esc(when(f.createdAt))}${f.readyAt?" · terminée "+esc(when(f.readyAt)):""}${f.calledAt?" · prévenu "+esc(when(f.calledAt)):""}${f.createdBy?" · fiche de "+esc(f.createdBy):""}</div>
+    <div class="meta">Déposée ${esc(when(f.createdAt))}${f.readyAt?" · terminée "+esc(when(f.readyAt)):""}${f.calledAt?" · prévenu "+esc(when(f.calledAt)):""}${paidTotal(f)>0&&f.paidAt?" · encaissé "+esc(when(f.paidAt)):""}${f.createdBy?" · fiche de "+esc(f.createdBy):""}</div>
+    ${paidTotal(f)>0?`<div class="meta"><span class="amount">Payé : cash ${esc(eur(f.paidCash||0))} · carte ${esc(eur(f.paidCard||0))}</span>${num(f.price)!=null&&paidTotal(f)<num(f.price)?" · reste "+esc(eur(num(f.price)-paidTotal(f))):""}</div>`:""}
+    ${withActions&&payOpen===f.id?`<div class="pay actions">
+      <label>Payé en cash (€)<input data-pay="cash" type="text" inputmode="decimal" placeholder="0" value="${esc(payDraft.cash)}"></label>
+      <label>Payé par carte (€)<input data-pay="carte" type="text" inputmode="decimal" placeholder="0" value="${esc(payDraft.carte)}"></label>
+      <p class="err" id="payErr" role="alert"></p>
+      <div class="wrap"><button class="primary" data-act="savepay" data-id="${f.id}">Enregistrer le paiement</button><button data-act="closepay" data-id="${f.id}">Annuler</button></div>
+    </div>`:""}
     ${a?`<div class="wrap actions">${a}</div>`:""}</article>`;
 }
 
@@ -291,6 +307,8 @@ function render(){
     $("t-pret").textContent=eur(total(fiches.filter(f=>f.status==="pret")));
     const today=dayKey(Date.now());
     $("t-jour").textContent=eur(total(fiches.filter(f=>f.createdAt&&dayKey(f.createdAt)===today)));
+    const paidToday=fiches.filter(f=>f.paidAt&&dayKey(f.paidAt)===today);
+    $("t-cash").textContent=eur(sumOf(paidToday,"paidCash")); $("t-carte").textContent=eur(sumOf(paidToday,"paidCard"));
   }
   const head=note?`<p class="msg">${esc(note)}</p>`:"";
   if(!loaded){$("list").innerHTML=`<p class="msg">${esc(note||"Chargement des fiches…")}</p>`}
@@ -303,7 +321,7 @@ function render(){
   const fmt=d=>d.toLocaleDateString("fr-BE",{day:"numeric",month:"long"});
   $("w-label").textContent="Semaine du "+fmt(s)+" au "+fmt(last);
   const wf=weekFiches();
-  $("w-sum").textContent=wf.length+(wf.length>1?" fiches":" fiche")+" cette semaine"+(seeTotals?" · total "+eur(total(wf)):"");
+  $("w-sum").textContent=wf.length+(wf.length>1?" fiches":" fiche")+" cette semaine"+(seeTotals?" · total "+eur(total(wf))+" · payé cash "+eur(sumOf(wf,"paidCash"))+" · payé carte "+eur(sumOf(wf,"paidCard")):"");
   $("w-list").innerHTML=wf.length?wf.map(f=>cardHtml(f,false)).join(""):`<p class="msg">Aucune fiche déposée cette semaine.</p>`;
   $("w-csv").disabled=!wf.length;
 }
@@ -348,8 +366,9 @@ $("w-print").onclick=()=>window.print();
 $("w-csv").onclick=()=>{
   const cell=v=>'"'+String(v==null?"":v).replace(/"/g,'""').replace(/\r?\n/g," / ")+'"';
   const dt=ts=>ts?new Date(ts).toLocaleString("fr-BE",{dateStyle:"short",timeStyle:"short"}):"";
-  const rows=[["Date de dépôt","Client","Téléphone","E-mail","Trottinette","Travaux","Prix (€)","Statut","Terminée le","Client prévenu le","Fiche créée par"]];
-  for(const f of weekFiches()) rows.push([dt(f.createdAt),f.name,f.phone,f.mail,f.scooter,f.work,num(f.price)!=null?String(num(f.price)).replace(".",","):"",LABEL[f.status],dt(f.readyAt),dt(f.calledAt),f.createdBy]);
+  const fr=v=>num(v)?String(num(v)).replace(".",","):"";
+  const rows=[["Date de dépôt","Client","Téléphone","E-mail","Trottinette","Travaux","Prix (€)","Statut","Terminée le","Client prévenu le","Payé cash (€)","Payé carte (€)","Payé le","Fiche créée par"]];
+  for(const f of weekFiches()) rows.push([dt(f.createdAt),f.name,f.phone,f.mail,f.scooter,f.work,num(f.price)!=null?String(num(f.price)).replace(".",","):"",LABEL[f.status],dt(f.readyAt),dt(f.calledAt),fr(f.paidCash),fr(f.paidCard),paidTotal(f)>0?dt(f.paidAt):"",f.createdBy]);
   const csv="﻿"+rows.map(r=>r.map(cell).join(";")).join("\r\n");
   const [s]=weekRange();
   const a=document.createElement("a");
@@ -363,6 +382,13 @@ $("list").addEventListener("click", async ev=>{
   const id=b.dataset.id, act=b.dataset.act, f=fiches.find(x=>x.id===id); if(!f) return;
   if(act==="askdel"){confirmDel=id;render();return}
   if(act==="nodel"){confirmDel=null;render();return}
+  if(act==="openpay"){
+    payOpen=id; const s=v=>num(v)?String(num(v)).replace(".",","):"";
+    payDraft={cash:s(f.paidCash),carte:s(f.paidCard)};
+    if(!paidTotal(f)&&num(f.price)!=null) payDraft.cash="";
+    render(); return;
+  }
+  if(act==="closepay"){payOpen=null;render();return}
   if(act==="edit"){
     editing=id; $("f-name").value=f.name||""; $("f-phone").value=f.phone||""; $("f-mail").value=f.mail||""; $("f-scooter").value=f.scooter||"";
     $("f-price").value=num(f.price)!=null?String(num(f.price)).replace(".",","):""; $("f-work").value=f.work||"";
@@ -375,10 +401,18 @@ $("list").addEventListener("click", async ev=>{
     if(act==="del") await deleteDoc(ref);
     else if(act==="pret") await updateDoc(ref,{status:"pret",readyAt:f.readyAt||Date.now(),calledAt:null});
     else if(act==="rappele") await updateDoc(ref,{status:"rappele",calledAt:Date.now()});
+    else if(act==="savepay"){
+      const c=payDraft.cash.trim()?num(payDraft.cash):0, k=payDraft.carte.trim()?num(payDraft.carte):0;
+      if(c==null||k==null){ const e=$("payErr"); if(e) e.textContent="Les montants doivent être des nombres, par exemple 50 ou 35,50."; b.disabled=false; return; }
+      await updateDoc(ref,{paidCash:c,paidCard:k,paidAt:c+k>0?Date.now():null});
+      payOpen=null; render();
+    }
     else await updateDoc(ref,{status:"encours",readyAt:null,calledAt:null});
     confirmDel=null;
   }catch(e){fail(e);b.disabled=false}
 });
+
+$("list").addEventListener("input",ev=>{ const k=ev.target.dataset&&ev.target.dataset.pay; if(k) payDraft[k]=ev.target.value; });
 
 // ---------- Démarrage ----------
 if(Object.values(firebaseConfig).some(v=>v==="A_REMPLIR")){
